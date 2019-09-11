@@ -1,0 +1,115 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  LambdaS3Bucket:
+    Type: String
+    Default: ''
+  CFNCustomProviderZipFileName:
+    Type: String
+    Default: lambdas/aws-cloudwatch-log-minder-latest.zip
+
+Conditions:
+  UsePublicBucket: !Equals
+    - !Ref 'LambdaS3Bucket'
+    - ''
+
+Resources:
+  Policy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+            - logs:DescribeLogGroups
+            - logs:DescribeLogStreams
+            - log:PutRetentionPolicy
+            - logs:DeleteLogStreams
+          Resource: "*"
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - !Ref Policy
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+  DeleteEmptyLogStreams:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Delete empty log streams older than retention period
+      FunctionName: aws-cloudwatch-delete-empty-log-streams
+      Code:
+        S3Bucket: !If
+          - UsePublicBucket
+          - !Sub 'binxio-public-${AWS::Region}'
+          - !Ref 'LambdaS3Bucket'
+        S3Key: !Ref 'CFNCustomProviderZipFileName'
+      Handler: aws_cloudwatch_log_minder.delete_empty_log_streams.handle
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.7
+      Timeout: 900
+
+  SetLogRetention:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: set default log retention period to groups without one
+      FunctionName: aws-cloudwatch-set-log-retention
+      Code:
+        S3Bucket: !If
+          - UsePublicBucket
+          - !Sub 'binxio-public-${AWS::Region}'
+          - !Ref 'LambdaS3Bucket'
+        S3Key: !Ref 'CFNCustomProviderZipFileName'
+      Handler: aws_cloudwatch_log_minder.set_log_retention.handle
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.7
+      Timeout: 900
+      Environment:
+        Variables:
+          DEFAULT_LOG_RETENTION_IN_DAYS: 30
+
+  DeleteEmptyLogStreamsSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt DeleteEmptyLogStreams.Arn
+      Principal: events.amazonaws.com
+
+  SetLogRetentionSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt SetLogRetention.Arn
+      Principal: events.amazonaws.com
+
+  DeleteEmptyLogStreamsSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: log minder 
+      ScheduleExpression: 'cron(15 0 * * ? *)'
+      State: ENABLED
+      Targets:
+        - Id: aws-cloudwatch-delete-empty-log-streams
+          Arn: !GetAtt DeleteEmptyLogStreams.Arn
+
+  SetLogRetentionSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: set log retention
+      ScheduleExpression: 'cron(0 0 * * ? *)'
+      State: ENABLED
+      Targets:
+        - Id: aws-cloudwatch-set-log-retention
+          Arn: !GetAtt SetLogRetention.Arn
+
