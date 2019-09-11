@@ -7,7 +7,7 @@ dependencies = ['boto3', 'click']
 
 setup(
     name='aws-cloudwatch-log-minder',
-    version="0.0.0",
+    version="0.1.1",
     url='https://github.com/binxio/aws-cloudwatch-log-minder',
     license='BSD',
     author='Mark van Holsteijn',
