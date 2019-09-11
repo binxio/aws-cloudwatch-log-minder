@@ -1,12 +1,11 @@
 import os
 import boto3
 from botocore.exceptions import ClientError
-import logging
+from .logging import log
 from datetime import datetime
 
 cw_logs = boto3.client('logs')
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
-log = logging.getLogger(__name__)
+
 
 def _delete_empty_log_streams(group: dict, oldest_in_ms: int, dry_run: bool):
     log_group_name = group["logGroupName"]

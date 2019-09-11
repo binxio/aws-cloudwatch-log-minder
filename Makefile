@@ -45,8 +45,10 @@ deploy-all-regions: deploy
 do-push: deploy
 
 do-build: target/$(NAME)-$(VERSION).zip
+	pipenv shell --anyway python setup.py check
+	pipenv shell --anyway python setup.py build
 
-do-dist:
+upload-dist:
 	rm -rf dist/*
 	pipenv shell --anyway python setup.py sdist
 	pipenv shell --anyway twine upload dist/*

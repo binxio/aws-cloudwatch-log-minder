@@ -1,4 +1,5 @@
 import os
+import logging
 import click
 from .delete_empty_log_streams import delete_empty_log_streams
 from .set_log_retention import set_log_retention
@@ -22,4 +23,5 @@ def delete_empty_log_streams_command(ctx):
     delete_empty_log_streams(ctx.obj['dry_run'])
 
 if __name__ == '__main__':
+    logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
     main()

@@ -1,12 +1,9 @@
 import os
 import boto3
 from botocore.exceptions import ClientError
-import logging
-from datetime import datetime
+from .logging import log
 
 cw_logs = boto3.client('logs')
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
-log = logging.getLogger(__name__)
 
 def set_log_retention(default_retention_period:int = 30, dry_run: bool = False):
     for response in cw_logs.get_paginator('describe_log_groups').paginate():
@@ -25,7 +22,7 @@ def set_log_retention(default_retention_period:int = 30, dry_run: bool = False):
                 except ClientError as e:
                     log.error('failed to set retention period of log stream %s to %s, %s', log_group_name, default_retention_period, e)
             else:
-                log.info('retention period on %s already set to %s', log_group_name, current_retention)
+                log.debug('retention period on %s already set to %s', log_group_name, current_retention)
 
 
 def handle(request={}, context={}):

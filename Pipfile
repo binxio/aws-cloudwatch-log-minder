@@ -8,8 +8,10 @@ boto3 = "*"
 pytest = "*"
 botostubs = "*"
 click = "*"
+twine = "*"
 
 [packages]
+aws-cloudwatch-log-minder = {editable = true,path = "."}
 
 [requires]
 python_version = "3.7"
