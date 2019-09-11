@@ -46,10 +46,10 @@ do-push: deploy
 
 do-build: target/$(NAME)-$(VERSION).zip
 
-do-dist: target/$(NAME)-$(VERSION).zip
+do-dist:
 	rm -rf dist/*
-	pipenv shell python setup.py sdist
-	pipenv twine upload dist/*
+	pipenv shell --anyway python setup.py sdist
+	pipenv shell --anyway twine upload dist/*
 
 target/$(NAME)-$(VERSION).zip: src/*/*.py requirements.txt Dockerfile.lambda
 	mkdir -p target
