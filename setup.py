@@ -5,6 +5,11 @@ from setuptools import find_packages, setup
 
 dependencies = ['boto3', 'click']
 
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 setup(
     name='aws-cloudwatch-log-minder',
     version="0.1.2",
@@ -12,8 +17,9 @@ setup(
     license='BSD',
     author='Mark van Holsteijn',
     author_email='mark@binx.io',
-    description='Maintain AWS Cloudwatch log streams',
-    long_description=__doc__,
+    description='Maintain AWS CloudWatch log streams',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     include_package_data=True,
