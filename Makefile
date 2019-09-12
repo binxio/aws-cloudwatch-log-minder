@@ -44,14 +44,16 @@ deploy-all-regions: deploy
 
 do-push: deploy
 
+pre-build:
+	pipenv run python setup.py check
+	pipenv run python setup.py build
+
 do-build: target/$(NAME)-$(VERSION).zip
-	pipenv shell --anyway python setup.py check
-	pipenv shell --anyway python setup.py build
 
 upload-dist:
 	rm -rf dist/*
-	pipenv shell --anyway python setup.py sdist
-	pipenv shell --anyway twine upload dist/*
+	pipenv run python setup.py sdist
+	pipenv run twine upload dist/*
 
 target/$(NAME)-$(VERSION).zip: src/*/*.py requirements.txt Dockerfile.lambda
 	mkdir -p target
