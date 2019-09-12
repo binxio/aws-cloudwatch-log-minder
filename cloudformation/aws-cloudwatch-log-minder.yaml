@@ -96,20 +96,23 @@ Resources:
   DeleteEmptyLogStreamsSchedule:
     Type: AWS::Events::Rule
     Properties:
-      Description: log minder 
-      ScheduleExpression: 'cron(15 0 * * ? *)'
+      Name: aws-cloudwatch-delete-empty-log-streams
+      Description: delete empty log streams
+      ScheduleExpression: 'cron(0 * * * ? *)'
       State: ENABLED
       Targets:
         - Id: aws-cloudwatch-delete-empty-log-streams
           Arn: !GetAtt DeleteEmptyLogStreams.Arn
+          Input: '{"dry_run": false}'
 
   SetLogRetentionSchedule:
     Type: AWS::Events::Rule
     Properties:
-      Description: set log retention
-      ScheduleExpression: 'cron(0 0 * * ? *)'
+      Name: aws-cloudwatch-set-log-retention
+      Description: set log retention on log streams
+      ScheduleExpression: 'cron(10 * * * ? *)'
       State: ENABLED
       Targets:
         - Id: aws-cloudwatch-set-log-retention
           Arn: !GetAtt SetLogRetention.Arn
-
+          Input: '{"dry_run": false, "days": 7}'
