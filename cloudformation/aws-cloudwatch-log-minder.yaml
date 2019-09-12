@@ -26,7 +26,7 @@ Resources:
             - logs:DescribeLogGroups
             - logs:DescribeLogStreams
             - logs:PutRetentionPolicy
-            - logs:DeleteLogStreams
+            - logs:DeleteLogStream
           Resource: "*"
 
   LambdaRole:
@@ -93,26 +93,26 @@ Resources:
       FunctionName: !GetAtt SetLogRetention.Arn
       Principal: events.amazonaws.com
 
-  DeleteEmptyLogStreamsSchedule:
-    Type: AWS::Events::Rule
-    Properties:
-      Name: aws-cloudwatch-delete-empty-log-streams
-      Description: delete empty log streams
-      ScheduleExpression: 'cron(0 * * * ? *)'
-      State: ENABLED
-      Targets:
-        - Id: aws-cloudwatch-delete-empty-log-streams
-          Arn: !GetAtt DeleteEmptyLogStreams.Arn
-          Input: '{"dry_run": false}'
-
   SetLogRetentionSchedule:
     Type: AWS::Events::Rule
     Properties:
       Name: aws-cloudwatch-set-log-retention
       Description: set log retention on log streams
-      ScheduleExpression: 'cron(10 * * * ? *)'
+      ScheduleExpression: 'cron(0 * * * ? *)'
       State: ENABLED
       Targets:
         - Id: aws-cloudwatch-set-log-retention
           Arn: !GetAtt SetLogRetention.Arn
-          Input: '{"dry_run": false, "days": 7}'
+          Input: '{"dry_run": false}'
+
+  DeleteEmptyLogStreamsSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: aws-cloudwatch-delete-empty-log-streams
+      Description: delete empty log streams
+      ScheduleExpression: 'cron(10 * * * ? *)'
+      State: ENABLED
+      Targets:
+        - Id: aws-cloudwatch-delete-empty-log-streams
+          Arn: !GetAtt DeleteEmptyLogStreams.Arn
+          Input: '{"dry_run": false}'
