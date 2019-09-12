@@ -25,7 +25,7 @@ Resources:
           Action:
             - logs:DescribeLogGroups
             - logs:DescribeLogStreams
-            - log:PutRetentionPolicy
+            - logs:PutRetentionPolicy
             - logs:DeleteLogStreams
           Resource: "*"
 

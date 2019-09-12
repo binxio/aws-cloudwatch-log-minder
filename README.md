@@ -1,10 +1,39 @@
 # AWS Cloudwatch Log minder
-the AWS Cloudwatch Log minder, has two tasks:
-- remove empty log streams older than the retention period of the log group
-- set a default retention period on log groups without a period set.
+AWS CloudWatch logs is an useful logging system, but it has two quircks. It does not allow you too set a default
+retention period for newly created log groups, and it does not delete empty log streams that are older than
+the retention period. This utility provides two functions:
+
+1. set a default retention period on log groups without a period set.
+1. remove empty log streams older than the retention period of the log group
+
+You can use it as a command line utility, or better, install it as an AWS Lambda function and have your
+log kept in order every day, NoOps style!
+
+## install the log minder
+to install the log minder, type:
+
+```sh
+pip install aws-cloudwatch-log-minder
+```
+
+## set default retention period
+to set the default retention period on log groups without one, type:
+```sh
+cwlogs-minder --dry-run set-log-retention --days 30
+```
+This will show you which log groups, will have its retention period set. Remove the `--dry-run` and
+it will actually be done.
+
+## delete empty log streams
+To delete empty log streams older than the retention period, type:
+```sh
+cwlogs-minder --dry-run delete-empty-log-streams
+```
+This will show you which empty log streams will be deleted. Remove the `--dry-run` and
+they actually will.
 
 ## deploy the log minder
-To deploy the log minder, type:
+To deploy the log minder as an AWS Lambda, type:
 
 ```sh
 git clone https://github.com/binxio/aws-cloudwatch-log-minder.git
@@ -16,11 +45,5 @@ aws cloudformation create-stack \
 
 aws cloudformation wait stack-create-complete  --stack-name aws-cloudwatch-log-minder
 ```
-
-It is scheduled to run every day around midnight.
-
-You can also use the command line utility:
-
-```sh
-pip install aws-cloudwatch-log-minder
-```
+This will install the log minder in your AWS account and run around midnight. First setting 
+retention periods and delete the empty log streams secondly.
