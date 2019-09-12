@@ -19,11 +19,11 @@ def _delete_empty_log_streams(group: dict, oldest_in_ms: int, dry_run: bool):
             log_stream_name = stream["logStreamName"]
             if stream["creationTime"] > oldest_in_ms:
                 log.debug(
-                    "keeping log stream %s from group %s as it is within retention period",
+                    "oldest log stream %s from group %s is within retention period",
                     log_stream_name,
                     log_group_name,
                 )
-                continue
+                break
 
             if not stream["storedBytes"] == 0 and stream["creationTime"] < oldest_in_ms:
                 try:
