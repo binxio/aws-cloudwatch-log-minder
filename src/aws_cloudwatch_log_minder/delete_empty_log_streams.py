@@ -24,6 +24,12 @@ def _delete_empty_log_streams(group: dict, dry_run:bool = False):
         )
         return
 
+    log.info(
+        "deleting streams from log group %s older than the retention period of %s days",
+        log_group_name,
+        retention_in_days,
+    )
+
     kwargs = {
         "logGroupName": log_group_name,
         "orderBy": "LastEventTime",
@@ -92,8 +98,22 @@ def get_all_log_group_names() -> List[str]:
         result.extend(list(map(lambda g: g["logGroupName"], response["logGroups"])))
     return result
 
+def fan_out(function_arn:str, dry_run: bool, log_group_names: List[str]):
+    awslambda = boto3.client("lambda")
+    log.info(
+        "recursively invoking %s to delete from log streams from %d log groups",
+        function_arn,
+        len(log_group_names),
+    )
+    for log_group_name in log_group_names:
+        args = json.dumps(
+            {"dry_run": dry_run, "log_group_name_prefix": log_group_name}
+        )
+        awslambda.invoke(
+            FunctionName=function_arn, InvocationType="Event", Payload=args
+        )
 
-def handle(request: dict = {}, context: dict = {}):
+def handle(request, context):
     dry_run = request.get("dry_run", False)
     if "dry_run" in request and not isinstance(dry_run, bool):
         raise ValueError(f"'dry_run' is not a boolean value, {request}")
@@ -102,11 +122,5 @@ def handle(request: dict = {}, context: dict = {}):
     if log_group_name_prefix:
         delete_empty_log_streams(dry_run, log_group_name_prefix)
     else:
-        awslambda = boto3.client("lambda")
-        for log_group_name in get_all_log_group_names():
-            args = json.dumps(
-                {"dry_run": dry_run, "log_group_name_prefix": log_group_name}
-            )
-            awslambda.invoke(
-                FunctionName=context.get("invoked_function_arn"), InvocationType="Event", Payload=args
-            )
+        fan_out(context.invoked_function_arn, dry_run, get_all_log_group_names())
+

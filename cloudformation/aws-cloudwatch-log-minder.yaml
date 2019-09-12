@@ -30,9 +30,9 @@ Resources:
           Resource: "*"
         - Effect: Allow
           Action:
-            - lambda:Invoke
+            - lambda:InvokeFunction
           Resource:
-            - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::Account}:function:aws-cloudwatch-delete-empty-log-streams'
+            - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:aws-cloudwatch-delete-empty-log-streams'
 
   LambdaRole:
     Type: AWS::IAM::Role

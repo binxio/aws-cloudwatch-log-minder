@@ -39,7 +39,7 @@ def set_log_retention(retention_in_days: int = 30, dry_run: bool = False):
                 )
 
 
-def handle(request={}, context={}):
+def handle(request, context):
     dry_run = request.get("dry_run", False)
     if "dry_run" in request and not isinstance(dry_run, bool):
         raise ValueError(f"'dry_run' is not a boolean value, {request}")

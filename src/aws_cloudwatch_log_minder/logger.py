@@ -1,5 +1,5 @@
 import os
 import logging
 
-log = logging.getLogger('cwlog-minder')
+log = logging.getLogger()
 log.setLevel(os.getenv("LOG_LEVEL", "INFO"))
