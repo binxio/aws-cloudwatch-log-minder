@@ -1,7 +1,7 @@
 import os
 import boto3
 from botocore.exceptions import ClientError
-from .logging import log
+from .logger import log
 
 cw_logs = boto3.client("logs")
 

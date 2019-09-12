@@ -28,6 +28,11 @@ Resources:
             - logs:PutRetentionPolicy
             - logs:DeleteLogStream
           Resource: "*"
+        - Effect: Allow
+          Action:
+            - lambda:Invoke
+          Resource:
+            - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::Account}:function:aws-cloudwatch-delete-empty-log-streams'
 
   LambdaRole:
     Type: AWS::IAM::Role
@@ -59,6 +64,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Runtime: python3.7
       Timeout: 900
+      ReservedConcurrentExecutions: 10
 
   SetLogRetention:
     Type: AWS::Lambda::Function

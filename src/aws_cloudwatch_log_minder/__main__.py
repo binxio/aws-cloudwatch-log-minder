@@ -19,8 +19,9 @@ def set_log_retention_command(ctx, days):
 
 @main.command(name='delete-empty-log-streams')
 @click.pass_context
-def delete_empty_log_streams_command(ctx):
-    delete_empty_log_streams(ctx.obj['dry_run'])
+@click.option('--log-group-name-prefix', type=str, required=False)
+def delete_empty_log_streams_command(ctx, log_group_name_prefix):
+    delete_empty_log_streams(ctx.obj['dry_run'], log_group_name_prefix)
 
 if __name__ == '__main__':
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
