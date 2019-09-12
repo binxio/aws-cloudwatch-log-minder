@@ -35,7 +35,7 @@ def _delete_empty_log_streams(group: dict, dry_run: bool = False):
         "logGroupName": log_group_name,
         "orderBy": "LastEventTime",
         "descending": False,
-        "PaginationConfig": {"MaxItems": 100},
+        "PaginationConfig": {"PageSize": 50},
     }
 
     for response in cw_logs.get_paginator("describe_log_streams").paginate(**kwargs):
@@ -87,7 +87,7 @@ def _delete_empty_log_streams(group: dict, dry_run: bool = False):
 
 
 def delete_empty_log_streams(dry_run: bool = False, log_group_name_prefix: str = None):
-    kwargs = {"PaginationConfig": {"MaxItems": 100}}
+    kwargs = {"PaginationConfig": {"PageSize": 50}}
     if log_group_name_prefix:
         kwargs["logGroupNamePrefix"] = log_group_name_prefix
 
@@ -99,7 +99,7 @@ def delete_empty_log_streams(dry_run: bool = False, log_group_name_prefix: str =
 def get_all_log_group_names() -> List[str]:
     result: List[str] = []
     for response in cw_logs.get_paginator("describe_log_groups").paginate(
-        PaginationConfig={"MaxItems": 100}
+        PaginationConfig={"PageSize": 50}
     ):
         result.extend(list(map(lambda g: g["logGroupName"], response["logGroups"])))
     return result
