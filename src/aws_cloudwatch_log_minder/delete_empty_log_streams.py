@@ -108,7 +108,7 @@ def get_all_log_group_names() -> List[str]:
 def fan_out(function_arn: str, dry_run: bool, log_group_names: List[str]):
     awslambda = boto3.client("lambda")
     log.info(
-        "recursively invoking %s to delete from log streams from %d log groups",
+        "recursively invoking %s to delete empty log streams from %d log groups",
         function_arn,
         len(log_group_names),
     )
