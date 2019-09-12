@@ -52,14 +52,6 @@ target/$(NAME)-$(VERSION).zip: src/*/*.py requirements.txt Dockerfile.lambda
 		docker export $$ID | (cd target && tar -xvf - $(NAME)-$(VERSION).zip) && \
 		docker rm -f $$ID && \
 		chmod ugo+r target/$(NAME)-$(VERSION).zip
-	aws s3 --region $(AWS_REGION) \
-		cp --acl \
-		public-read target/$(NAME)-$(VERSION).zip \
-		s3://$(S3_BUCKET)/lambdas/$(NAME)-$(VERSION).zip
-	aws s3 --region $(AWS_REGION) \
-		cp --acl public-read \
-		s3://$(S3_BUCKET)/lambdas/$(NAME)-$(VERSION).zip \
-		s3://$(S3_BUCKET)/lambdas/$(NAME)-latest.zip
 
 venv: requirements.txt
 	virtualenv -p python3 venv  && \
@@ -83,7 +75,17 @@ test: venv
 fmt:
 	black $(find src -name *.py) tests/*.py
 
-deploy-lambda: target/$(NAME)-$(VERSION).zip
+deploy: target/$(NAME)-$(VERSION).zip
+	aws s3 --region $(AWS_REGION) \
+		cp --acl \
+		public-read target/$(NAME)-$(VERSION).zip \
+		s3://$(S3_BUCKET)/lambdas/$(NAME)-$(VERSION).zip
+	aws s3 --region $(AWS_REGION) \
+		cp --acl public-read \
+		s3://$(S3_BUCKET)/lambdas/$(NAME)-$(VERSION).zip \
+		s3://$(S3_BUCKET)/lambdas/$(NAME)-latest.zip
+
+deploy-lambda: deploy target/$(NAME)-$(VERSION).zip
 	@set -x ;if aws cloudformation get-template-summary --stack-name $(NAME) >/dev/null 2>&1 ; then \
 		export CFN_COMMAND=update; \
 	else \
