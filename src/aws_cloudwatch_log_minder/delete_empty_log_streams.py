@@ -1,8 +1,8 @@
-from datetime import datetime, timedelta
-
 import json
-import boto3
+from datetime import datetime, timedelta
 from typing import List
+
+import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
@@ -15,8 +15,8 @@ def ms_to_datetime(ms: int) -> datetime:
     return datetime(1970, 1, 1) + timedelta(milliseconds=ms)
 
 
-def _delete_empty_log_streams(group: dict, dry_run: bool = False):
-    now = datetime.utcnow()
+def _delete_empty_log_streams(group: dict, purge_non_empty: bool = False, dry_run: bool = False):
+    now = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     log_group_name = group["logGroupName"]
     retention_in_days = group["retentionInDays"]
     if not retention_in_days:
@@ -53,7 +53,7 @@ def _delete_empty_log_streams(group: dict, dry_run: bool = False):
                 )
                 return
 
-            if stored_bytes:
+            if not purge_non_empty and stored_bytes:
                 log.warn(
                     "keeping group %s, log stream %s, with %s bytes last event stored on %s",
                     log_group_name,
@@ -86,26 +86,26 @@ def _delete_empty_log_streams(group: dict, dry_run: bool = False):
                 )
 
 
-def delete_empty_log_streams(dry_run: bool = False, log_group_name_prefix: str = None):
+def delete_empty_log_streams(log_group_name_prefix: str = None, purge_non_empty: bool = False, dry_run: bool = False):
     kwargs = {"PaginationConfig": {"PageSize": 50}}
     if log_group_name_prefix:
         kwargs["logGroupNamePrefix"] = log_group_name_prefix
 
     for response in cw_logs.get_paginator("describe_log_groups").paginate(**kwargs):
         for group in response["logGroups"]:
-            _delete_empty_log_streams(group, dry_run)
+            _delete_empty_log_streams(group, purge_non_empty, dry_run)
 
 
 def get_all_log_group_names() -> List[str]:
     result: List[str] = []
     for response in cw_logs.get_paginator("describe_log_groups").paginate(
-        PaginationConfig={"PageSize": 50}
+            PaginationConfig={"PageSize": 50}
     ):
         result.extend(list(map(lambda g: g["logGroupName"], response["logGroups"])))
     return result
 
 
-def fan_out(function_arn: str, dry_run: bool, log_group_names: List[str]):
+def fan_out(function_arn: str, log_group_names: List[str], purge_non_empty: bool, dry_run: bool):
     awslambda = boto3.client("lambda")
     log.info(
         "recursively invoking %s to delete empty log streams from %d log groups",
@@ -113,9 +113,14 @@ def fan_out(function_arn: str, dry_run: bool, log_group_names: List[str]):
         len(log_group_names),
     )
     for log_group_name in log_group_names:
-        args = json.dumps({"dry_run": dry_run, "log_group_name_prefix": log_group_name})
+        payload = json.dumps(
+            {
+                "log_group_name_prefix": log_group_name,
+                "purge_non_empty": purge_non_empty,
+                "dry_run": dry_run,
+            })
         awslambda.invoke(
-            FunctionName=function_arn, InvocationType="Event", Payload=args
+            FunctionName=function_arn, InvocationType="Event", Payload=payload
         )
 
 
@@ -124,8 +129,12 @@ def handle(request, context):
     if "dry_run" in request and not isinstance(dry_run, bool):
         raise ValueError(f"'dry_run' is not a boolean value, {request}")
 
+    purge_non_empty = request.get("purge_non_empty", False)
+    if "purge_non_empty" in request and not isinstance(dry_run, bool):
+        raise ValueError(f"'purge_non_empty' is not a boolean value, {request}")
+
     log_group_name_prefix = request.get("log_group_name_prefix")
     if log_group_name_prefix:
-        delete_empty_log_streams(dry_run, log_group_name_prefix)
+        delete_empty_log_streams(log_group_name_prefix, purge_non_empty, dry_run)
     else:
-        fan_out(context.invoked_function_arn, dry_run, get_all_log_group_names())
+        fan_out(context.invoked_function_arn, get_all_log_group_names(), purge_non_empty, dry_run)
