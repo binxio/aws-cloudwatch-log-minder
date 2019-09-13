@@ -18,10 +18,10 @@ def ms_to_datetime(ms: int) -> datetime:
 def _delete_empty_log_streams(group: dict, purge_non_empty: bool = False, dry_run: bool = False):
     now = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     log_group_name = group["logGroupName"]
-    retention_in_days = group["retentionInDays"]
+    retention_in_days = group.get("retentionInDays", 0)
     if not retention_in_days:
         log.info(
-            "skipping log group %s as it has not retention period set", log_group_name
+            "skipping log group %s as it has no retention period set", log_group_name
         )
         return
 
