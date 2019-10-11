@@ -46,3 +46,10 @@ aws cloudformation create-stack \
 aws cloudformation wait stack-create-complete  --stack-name aws-cloudwatch-log-minder
 ```
 This will install the log minder in your AWS account and run every hour.
+
+## verbose
+
+```sh
+export LOG_LEVEL=INFO
+cwlog-minder ...
+```

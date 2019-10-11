@@ -9,6 +9,7 @@ from .set_log_retention import set_log_retention
 @click.option('--dry-run', is_flag=True, default=False,
               help='do not change anything, just show what is going to happen')
 def main(ctx, dry_run):
+    logging.basicConfig(level=os.getenv("LOG_LEVEL", "WARN"))
     ctx.obj = ctx.params
 
 @main.command(name='set-log-retention')
@@ -25,5 +26,4 @@ def delete_empty_log_streams_command(ctx, log_group_name_prefix, purge_non_empty
     delete_empty_log_streams(log_group_name_prefix, purge_non_empty, ctx.obj['dry_run'])
 
 if __name__ == '__main__':
-    logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
     main()
