@@ -86,17 +86,11 @@ deploy: target/$(NAME)-$(VERSION).zip
 		s3://$(S3_BUCKET)/lambdas/$(NAME)-latest.zip
 
 deploy-lambda: deploy target/$(NAME)-$(VERSION).zip
-	@set -x ;if aws cloudformation get-template-summary --stack-name $(NAME) >/dev/null 2>&1 ; then \
-		export CFN_COMMAND=update; \
-	else \
-		export CFN_COMMAND=create; \
-	fi ;\
-	aws cloudformation $$CFN_COMMAND-stack \
+	aws cloudformation deploy \
 		--capabilities CAPABILITY_IAM \
 		--stack-name $(NAME) \
-		--template-body file://cloudformation/aws-cloudwatch-log-minder.yaml \
-		--parameters ParameterKey=CFNCustomProviderZipFileName,ParameterValue=lambdas/$(NAME)-$(VERSION).zip; \
-	aws cloudformation wait stack-$$CFN_COMMAND-complete --stack-name $(NAME) ;
+		--template-file ./cloudformation/aws-cloudwatch-log-minder.yaml \
+		--parameter-override CFNCustomProviderZipFileName=lambdas/$(NAME)-$(VERSION).zip
 
 delete-lambda:
 	aws cloudformation delete-stack --stack-name $(NAME)

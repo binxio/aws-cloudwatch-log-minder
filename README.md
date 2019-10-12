@@ -38,11 +38,9 @@ To deploy the log minder as an AWS Lambda, type:
 ```sh
 git clone https://github.com/binxio/aws-cloudwatch-log-minder.git
 cd aws-cloudwatch-log-minder
-aws cloudformation create-stack \
-        --capabilities CAPABILITY_IAM \
-        --stack-name aws-cloudwatch-log-minder \
-        --template-body file://./cloudformation/aws-cloudwatch-log-minder.yaml
-
-aws cloudformation wait stack-create-complete  --stack-name aws-cloudwatch-log-minder
+aws cloudformation deploy \
+	--capabilities CAPABILITY_IAM \
+	--stack-name aws-cloudwatch-log-minder \
+	--template-file ./cloudformation/aws-cloudwatch-log-minder.yaml
 ```
 This will install the log minder in your AWS account and run every hour.
