@@ -8,9 +8,11 @@ Parameters:
   CFNCustomProviderZipFileName:
     Type: String
     Default: lambdas/aws-cloudwatch-log-minder-0.2.3.zip
-  DefaultRetentionDays:
+  LogRetentionInDays:
+    Description: 'to apply to log groups without retention'
     Type: Number
     Default: 30
+    MinValue: 1
 
 Conditions:
   UsePublicBucket: !Equals
@@ -85,7 +87,7 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
-          DEFAULT_LOG_RETENTION_IN_DAYS: !Ref 'DefaultRetentionDays'
+          DEFAULT_LOG_RETENTION_IN_DAYS: !Ref 'LogRetentionInDays'
 
   DeleteEmptyLogStreamsSchedulePermission:
     Type: AWS::Lambda::Permission
