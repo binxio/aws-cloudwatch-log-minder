@@ -42,6 +42,6 @@ aws cloudformation deploy \
 	--capabilities CAPABILITY_IAM \
 	--stack-name aws-cloudwatch-log-minder \
 	--template-file ./cloudformation/aws-cloudwatch-log-minder.yaml \
-        --parameter-overrides LogRetentionInDays=30
+	--parameter-overrides LogRetentionInDays=30
 ```
 This will install the log minder in your AWS account and run every hour.
