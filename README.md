@@ -45,3 +45,10 @@ aws cloudformation deploy \
 	--parameter-overrides LogRetentionInDays=30
 ```
 This will install the log minder in your AWS account and run every hour.
+
+## verbose
+
+```sh
+export LOG_LEVEL=INFO
+cwlog-minder ...
+```
