@@ -45,7 +45,15 @@ def _delete_empty_log_streams(group: dict, purge_non_empty: bool = False, dry_ru
             last_event = ms_to_datetime(
                 stream.get("lastEventTimestamp", stream.get("creationTime"))
             )
-            if last_event > (now - timedelta(days=retention_in_days)):
+            if last_event > (now - timedelta(days=retention_in_days)) and "lastEventTimestamp" not in stream:
+                log.info(
+                    "keeping group %s, empty log stream %s, created on %s",
+                    log_group_name,
+                    log_stream_name,
+                    last_event,
+                )
+                continue
+            elif last_event > (now - timedelta(days=retention_in_days)):
                 log.info(
                     "there are no log streams from group %s older than the retention period of %s days",
                     log_group_name,
