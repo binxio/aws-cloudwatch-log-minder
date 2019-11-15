@@ -19,7 +19,7 @@ pip install aws-cloudwatch-log-minder
 ## set default retention period
 to set the default retention period on log groups without one, type:
 ```sh
-cwlogs-minder --dry-run set-log-retention --days 30
+cwlog-minder --dry-run set-log-retention --days 30
 ```
 This will show you which log groups will have its retention period set. Remove the `--dry-run` and
 it the retention period will be set.
@@ -27,7 +27,7 @@ it the retention period will be set.
 ## delete empty log streams
 To delete empty log streams older than the retention period, type:
 ```sh
-cwlogs-minder --dry-run delete-empty-log-streams
+cwlog-minder --dry-run delete-empty-log-streams
 ```
 This will show you which empty log streams will be deleted. Remove the `--dry-run` and
 these stream will be deleted.
