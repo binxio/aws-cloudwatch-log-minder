@@ -32,6 +32,7 @@ Resources:
             - logs:DescribeLogStreams
             - logs:PutRetentionPolicy
             - logs:DeleteLogStream
+            - logs:GetLogStream
           Resource: "*"
         - Effect: Allow
           Action:
