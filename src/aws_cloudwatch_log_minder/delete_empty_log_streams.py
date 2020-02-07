@@ -15,7 +15,9 @@ def ms_to_datetime(ms: int) -> datetime:
     return datetime(1970, 1, 1) + timedelta(milliseconds=ms)
 
 
-def _delete_empty_log_streams(group: dict, purge_non_empty: bool = False, dry_run: bool = False):
+def _delete_empty_log_streams(
+    group: dict, purge_non_empty: bool = False, dry_run: bool = False
+):
     now = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     log_group_name = group["logGroupName"]
     retention_in_days = group.get("retentionInDays", 0)
@@ -40,12 +42,14 @@ def _delete_empty_log_streams(group: dict, purge_non_empty: bool = False, dry_ru
 
     for response in cw_logs.get_paginator("describe_log_streams").paginate(**kwargs):
         for stream in response["logStreams"]:
-            stored_bytes = stream["storedBytes"]
             log_stream_name = stream["logStreamName"]
             last_event = ms_to_datetime(
                 stream.get("lastEventTimestamp", stream.get("creationTime"))
             )
-            if last_event > (now - timedelta(days=retention_in_days)) and "lastEventTimestamp" not in stream:
+            if (
+                last_event > (now - timedelta(days=retention_in_days))
+                and "lastEventTimestamp" not in stream
+            ):
                 log.info(
                     "keeping group %s, empty log stream %s, created on %s",
                     log_group_name,
@@ -61,14 +65,17 @@ def _delete_empty_log_streams(group: dict, purge_non_empty: bool = False, dry_ru
                 )
                 return
 
-            if not purge_non_empty and stored_bytes:
-                log.warn(
-                    "keeping group %s, log stream %s, with %s bytes last event stored on %s",
-                    log_group_name,
-                    log_stream_name,
-                    stream["storedBytes"],
-                    last_event,
+            if not purge_non_empty:
+                response = cw_logs.get_log_events(logGroupName=log_group_name,
+                    logStreamName=log_stream_name, startFromHead=False, limit=2
                 )
+                if response["events"]:
+                    log.warn(
+                        "keeping group %s, log stream %s, as it is non empty. Last event stored on %s",
+                        log_group_name,
+                        log_stream_name,
+                        last_event,
+                    )
                 continue
 
             log.info(
@@ -94,7 +101,11 @@ def _delete_empty_log_streams(group: dict, purge_non_empty: bool = False, dry_ru
                 )
 
 
-def delete_empty_log_streams(log_group_name_prefix: str = None, purge_non_empty: bool = False, dry_run: bool = False):
+def delete_empty_log_streams(
+    log_group_name_prefix: str = None,
+    purge_non_empty: bool = False,
+    dry_run: bool = False,
+):
     kwargs = {"PaginationConfig": {"PageSize": 50}}
     if log_group_name_prefix:
         kwargs["logGroupNamePrefix"] = log_group_name_prefix
@@ -108,13 +119,15 @@ def delete_empty_log_streams(log_group_name_prefix: str = None, purge_non_empty:
 def get_all_log_group_names() -> List[str]:
     result: List[str] = []
     for response in cw_logs.get_paginator("describe_log_groups").paginate(
-            PaginationConfig={"PageSize": 50}
+        PaginationConfig={"PageSize": 50}
     ):
         result.extend(list(map(lambda g: g["logGroupName"], response["logGroups"])))
     return result
 
 
-def fan_out(function_arn: str, log_group_names: List[str], purge_non_empty: bool, dry_run: bool):
+def fan_out(
+    function_arn: str, log_group_names: List[str], purge_non_empty: bool, dry_run: bool
+):
     awslambda = boto3.client("lambda")
     log.info(
         "recursively invoking %s to delete empty log streams from %d log groups",
@@ -127,7 +140,8 @@ def fan_out(function_arn: str, log_group_names: List[str], purge_non_empty: bool
                 "log_group_name_prefix": log_group_name,
                 "purge_non_empty": purge_non_empty,
                 "dry_run": dry_run,
-            })
+            }
+        )
         awslambda.invoke(
             FunctionName=function_arn, InvocationType="Event", Payload=payload
         )
@@ -146,4 +160,9 @@ def handle(request, context):
     if log_group_name_prefix:
         delete_empty_log_streams(log_group_name_prefix, purge_non_empty, dry_run)
     else:
-        fan_out(context.invoked_function_arn, get_all_log_group_names(), purge_non_empty, dry_run)
+        fan_out(
+            context.invoked_function_arn,
+            get_all_log_group_names(),
+            purge_non_empty,
+            dry_run,
+        )
