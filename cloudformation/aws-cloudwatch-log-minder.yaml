@@ -33,6 +33,7 @@ Resources:
             - logs:PutRetentionPolicy
             - logs:DeleteLogStream
             - logs:GetLogStream
+            - logs:GetLogEvents
           Resource: "*"
         - Effect: Allow
           Action:
