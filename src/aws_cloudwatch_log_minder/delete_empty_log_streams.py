@@ -76,7 +76,7 @@ def _delete_empty_log_streams(
                         log_stream_name,
                         last_event,
                     )
-                continue
+                    continue
 
             log.info(
                 "deleting from group %s, log stream %s, with %s bytes last event stored on %s",
