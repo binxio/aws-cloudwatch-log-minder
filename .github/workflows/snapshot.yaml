@@ -10,4 +10,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: pwd
+      - run: find . -type f
       - run: make snapshot
