@@ -52,3 +52,30 @@ This will install the log minder in your AWS account and run every hour.
 export LOG_LEVEL=INFO
 cwlog-minder ...
 ```
+
+## region and profile selection
+AWS regions and credential profiles can be selected via command line
+arguments or environment variables.
+
+### region via parameter
+```sh
+cwlog-minder --region eu-west-1 ...
+```
+
+### region via environment
+```sh
+export AWS_DEFAULT_REGION=eu-west-1
+cwlog-minder eu-west-1 ...
+```
+
+### profile via parameter
+```sh
+cwlog-minder --profile dev ...
+```
+
+### profile via environment
+
+```sh
+export AWS_PROFILE=dev
+cwlog-minder ...
+```

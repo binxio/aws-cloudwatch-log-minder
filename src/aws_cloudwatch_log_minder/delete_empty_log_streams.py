@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 
 from .logger import log
 
-cw_logs = boto3.client("logs", config=Config(retries=dict(max_attempts=10)))
+cw_logs = None
 
 
 def ms_to_datetime(ms: int) -> datetime:
@@ -105,7 +105,14 @@ def delete_empty_log_streams(
     log_group_name_prefix: str = None,
     purge_non_empty: bool = False,
     dry_run: bool = False,
+    region: str = None,
+    profile: str = None,
 ):
+    global cw_logs
+
+    boto_session = boto3.Session(region_name=region, profile_name=profile)
+    cw_logs = boto_session.client("logs", config=Config(retries=dict(max_attempts=10)))
+
     kwargs = {"PaginationConfig": {"PageSize": 50}}
     if log_group_name_prefix:
         kwargs["logGroupNamePrefix"] = log_group_name_prefix
