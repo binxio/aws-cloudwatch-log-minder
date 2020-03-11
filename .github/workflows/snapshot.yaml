@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: pwd
-        id: 1
+        id: step1
       - run: find . -type f -print
-        id: 2
+        id: step2
       - run: make snapshot
-        id: 3
+        id: step3
