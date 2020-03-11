@@ -11,7 +11,7 @@ jobs:
     steps:
       - run: pwd
         id: step1
-      - run: find . -type f -print
+      - run: ls
         id: step2
       - run: make snapshot
         id: step3
