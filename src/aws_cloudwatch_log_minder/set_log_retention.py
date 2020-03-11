@@ -2,8 +2,8 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 from .logger import log
-import logging
-logging.getLogger('botocore').setLevel(logging.DEBUG) 
+
+
 cw_logs = None
 
 
@@ -22,7 +22,7 @@ def set_log_retention(
         for group in response["logGroups"]:
             log_group_name = group["logGroupName"]
             current_retention = group.get("retentionInDays")
-            if not current_retention  or int(current_retention) > retention_in_days:
+            if not current_retention or int(current_retention) > retention_in_days:
                 try:
                     log.info(
                         "setting default retention period of log stream %s to %s",
@@ -32,8 +32,7 @@ def set_log_retention(
                     if dry_run:
                         continue
                     cw_logs.put_retention_policy(
-                        logGroupName=log_group_name,
-                        retentionInDays=retention_in_days,
+                        logGroupName=log_group_name, retentionInDays=retention_in_days
                     )
                 except ClientError as e:
                     log.error(
