@@ -2,11 +2,22 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 from .logger import log
+import logging
+logging.getLogger('botocore').setLevel(logging.DEBUG) 
+cw_logs = None
 
-cw_logs = boto3.client("logs")
 
+def set_log_retention(
+    retention_in_days: int = 30,
+    dry_run: bool = False,
+    region: str = None,
+    profile: str = None,
+):
+    global cw_logs
 
-def set_log_retention(retention_in_days: int = 30, dry_run: bool = False):
+    boto_session = boto3.Session(region_name=region, profile_name=profile)
+    cw_logs = boto_session.client("logs")
+
     for response in cw_logs.get_paginator("describe_log_groups").paginate():
         for group in response["logGroups"]:
             log_group_name = group["logGroupName"]
