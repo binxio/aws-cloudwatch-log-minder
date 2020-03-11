@@ -1,6 +1,8 @@
 name: release
-on: [tags]
-
+on:
+  push:
+    tags:
+      - '*'
 jobs:
   build:
     name: Greeting
