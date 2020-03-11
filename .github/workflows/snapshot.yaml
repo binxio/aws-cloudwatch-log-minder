@@ -6,8 +6,8 @@ on: [push]
 #      - '*'
 jobs:
   build:
-    name: Greeting
+    name: snapshot
     runs-on: ubuntu-latest
     steps:
-      - name: release
+        run: pwd
         run: make snapshot
