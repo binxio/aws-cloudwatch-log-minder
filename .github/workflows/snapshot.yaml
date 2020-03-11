@@ -9,5 +9,5 @@ jobs:
     name: snapshot
     runs-on: ubuntu-latest
     steps:
-        run: pwd
-        run: make snapshot
+      - run: pwd
+      - run: make snapshot
