@@ -1,0 +1,10 @@
+name: release
+on: [tags]
+
+jobs:
+  build:
+    name: Greeting
+    runs-on: ubuntu-latest
+    steps:
+      - name: release
+        run: make release
