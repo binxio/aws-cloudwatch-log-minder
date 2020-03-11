@@ -66,8 +66,11 @@ def _delete_empty_log_streams(
                 return
 
             if not purge_non_empty:
-                response = cw_logs.get_log_events(logGroupName=log_group_name,
-                    logStreamName=log_stream_name, startFromHead=False, limit=2
+                response = cw_logs.get_log_events(
+                    logGroupName=log_group_name,
+                    logStreamName=log_stream_name,
+                    startFromHead=False,
+                    limit=2,
                 )
                 if response["events"]:
                     log.warn(
