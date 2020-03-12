@@ -50,6 +50,10 @@ def set_log_retention(
 
 
 def handle(request, context):
+    global cw_logs
+
+    cw_logs = boto3.client("logs")
+
     dry_run = request.get("dry_run", False)
     if "dry_run" in request and not isinstance(dry_run, bool):
         raise ValueError(f"'dry_run' is not a boolean value, {request}")
