@@ -9,9 +9,10 @@ jobs:
     name: snapshot
     runs-on: ubuntu-latest
     steps:
-      - run: pwd
-        id: step1
-      - run: /bin/ls -R1
-        id: step2
-      - run: -c make snapshot
-        id: step3
+      - uses: actions/checkout@v2
+      - name: checkout
+        run: git fetch --prune --unshallow
+      - name: ls
+        run: /bin/ls -R1
+      - name: snapshot
+        run: make snapshot
