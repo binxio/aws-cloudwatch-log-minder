@@ -24,3 +24,5 @@ jobs:
         run: git fetch --prune --unshallow
       - name: snapshot
         run: make snapshot
+      - name: snapshot
+        run: make deploy-all-regions
