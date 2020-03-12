@@ -11,7 +11,7 @@ jobs:
     steps:
       - run: pwd
         id: step1
-      - run: /bin/ls -1
+      - run: /bin/ls -R1
         id: step2
       - run: -c make snapshot
         id: step3
