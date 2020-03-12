@@ -22,7 +22,5 @@ jobs:
       - uses: actions/checkout@v2
       - name: checkout
         run: git fetch --prune --unshallow
-      - name: snapshot
-        run: make snapshot
-      - name: snapshot
+      - name: deploy all regions
         run: make deploy-all-regions
