@@ -21,7 +21,7 @@ jobs:
       - name: pipenv
         run: pip install pipenv && pipenv sync -d 
       - name: deploy all regions
-        run: make deploy #-all-regions
+        run: make deploy-all-regions
       - name: show workspace
         run: find . -type f
       - name: distribute application
