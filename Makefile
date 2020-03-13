@@ -5,7 +5,10 @@ AWS_REGION=eu-central-1
 S3_BUCKET_PREFIX=binxio-public
 S3_BUCKET=$(S3_BUCKET_PREFIX)-$(AWS_REGION)
 
-ALL_REGIONS=$(shell printf "import boto3\nprint('\\\n'.join(map(lambda r: r['RegionName'], boto3.client('ec2').describe_regions()['Regions'])))\n" | pipenv run python | grep -v '^$(AWS_REGION)$$')
+ALL_REGIONS=$(shell aws --region $(AWS_REGION) \
+		ec2 describe-regions 		\
+		--query 'join(`\n`, Regions[?RegionName != `$(AWS_REGION)`].RegionName)' \
+		--output text)
 
 help:
 	@echo 'make                 - builds a zip file to target/.'
@@ -34,43 +37,36 @@ deploy-all-regions: deploy
 
 do-push: deploy
 
-pre-build:
-	pipenv run python setup.py check
-	pipenv run python setup.py build
 
-do-build: target/$(NAME)-$(VERSION).zip
+do-build: Pipfile.lock target/$(NAME)-$(VERSION).zip
 
-upload-dist:
-	rm -rf dist/*
-	pipenv run python setup.py sdist
+upload-dist: Pipfile.lock
 	pipenv run twine upload dist/*
 
-target/$(NAME)-$(VERSION).zip: src/*/*.py requirements.txt Dockerfile.lambda
+target/$(NAME)-$(VERSION).zip: setup.py src/*/*.py requirements.txt Dockerfile.lambda
 	mkdir -p target
+	rm -rf dist/* target/*
+	pipenv run python setup.py check
+	pipenv run python setup.py build
+	pipenv run python setup.py sdist
 	docker build --build-arg ZIPFILE=$(NAME)-$(VERSION).zip -t $(NAME)-lambda:$(VERSION) -f Dockerfile.lambda . && \
 		ID=$$(docker create $(NAME)-lambda:$(VERSION) /bin/true) && \
 		docker export $$ID | (cd target && tar -xvf - $(NAME)-$(VERSION).zip) && \
 		docker rm -f $$ID && \
 		chmod ugo+r target/$(NAME)-$(VERSION).zip
 
-venv: requirements.txt
-	virtualenv -p python3 venv  && \
-	. ./venv/bin/activate && \
-	pip install --quiet --upgrade pip && \
-	pip install --quiet -r requirements.txt
+Pipfile.lock: Pipfile requirements.txt test-requirements.txt setup.py
+	pipenv update -d
 
 clean:
 	rm -rf venv target
 	find . -name \*.pyc | xargs rm 
 
-test: venv
+test: Pipfile.lock
 	for i in $$PWD/cloudformation/*; do \
 		aws cloudformation validate-template --template-body file://$$i > /dev/null || exit 1; \
 	done
-	. ./venv/bin/activate && \
-	pip install --quiet -r requirements.txt -r test-requirements.txt && \
-	cd src && \
-        PYTHONPATH=$(PWD)/src pytest ../tests/test*.py
+	[ -z "$(ls -1 tests/test*.py 2>/dev/null)" ] || PYTHONPATH=$(PWD)/src pipenv run pytest ./tests/test*.py
 
 fmt:
 	black $(find src -name *.py) tests/*.py
@@ -95,28 +91,4 @@ deploy-lambda: deploy target/$(NAME)-$(VERSION).zip
 delete-lambda:
 	aws cloudformation delete-stack --stack-name $(NAME)
 	aws cloudformation wait stack-delete-complete  --stack-name $(NAME)
-
-demo: 
-	@if aws cloudformation get-template-summary --stack-name $(NAME)-demo >/dev/null 2>&1 ; then \
-		export CFN_COMMAND=update; export CFN_TIMEOUT="" ;\
-	else \
-		export CFN_COMMAND=create; export CFN_TIMEOUT="--timeout-in-minutes 10" ;\
-	fi ;\
-	export VPC_ID=$$(aws ec2  --output text --query 'Vpcs[?IsDefault].VpcId' describe-vpcs) ; \
-        export SUBNET_IDS=$$(aws ec2 --output text --query 'RouteTables[?Routes[?DestinationCidrBlock == `0.0.0.0/0` && GatewayId]].Associations[].SubnetId' \
-                                describe-route-tables --filters Name=vpc-id,Values=$$VPC_ID | tr '\t' ','); \
-	echo "$$CFN_COMMAND demo in default VPC $$VPC_ID, subnets $$SUBNET_IDS" ; \
-        ([[ -z $$VPC_ID ]] || [[ -z $$SUBNET_IDS ]] ) && \
-                echo "Either there is no default VPC in your account or there are no subnets in the default VPC" && exit 1 ; \
-	aws cloudformation $$CFN_COMMAND-stack --stack-name $(NAME)-demo \
-		--template-body file://cloudformation/demo-stack.yaml  \
-		$$CFN_TIMEOUT \
-		--parameters 	ParameterKey=VPC,ParameterValue=$$VPC_ID \
-				ParameterKey=Subnets,ParameterValue=\"$$SUBNET_IDS\" ;\
-	aws cloudformation wait stack-$$CFN_COMMAND-complete --stack-name $(NAME)-demo ;
-
-
-delete-demo:
-	aws cloudformation delete-stack --stack-name $(NAME)-demo
-	aws cloudformation wait stack-delete-complete  --stack-name $(NAME)-demo
 
