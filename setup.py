@@ -12,7 +12,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='aws-cloudwatch-log-minder',
-    version="0.3.0",
+    version="0.3.1",
     url='https://github.com/binxio/aws-cloudwatch-log-minder',
     license='BSD',
     author='Mark van Holsteijn',
