@@ -39,13 +39,13 @@ Resources:
           Action:
             - lambda:InvokeFunction
           Resource:
-            - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:aws-cloudwatch-delete-empty-log-streams'
+            - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:aws-cloudwatch-delete-empty-log-streams'
 
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
       ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - !Ref Policy
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
