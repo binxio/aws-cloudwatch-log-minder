@@ -22,7 +22,7 @@ def set_log_retention(
         for group in response["logGroups"]:
             log_group_name = group["logGroupName"]
             current_retention = group.get("retentionInDays")
-            if not current_retention or int(current_retention) > retention_in_days:
+            if not current_retention or int(current_retention) != retention_in_days:
                 try:
                     log.info(
                         "setting default retention period of log stream %s to %s",
