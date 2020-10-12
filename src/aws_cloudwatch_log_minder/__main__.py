@@ -23,8 +23,9 @@ def main(ctx, dry_run, region, profile):
 @main.command(name="set-log-retention")
 @click.pass_context
 @click.option("--days", type=int, required=False, default=30, help="retention period")
-def set_log_retention_command(ctx, days):
-    set_log_retention(days, ctx.obj["dry_run"], ctx.obj["region"], ctx.obj["profile"])
+@click.option("--overwrite", is_flag=True, default=False, help="existing retention periods")
+def set_log_retention_command(ctx, days, overwrite):
+    set_log_retention(days, overwrite, ctx.obj["dry_run"], ctx.obj["region"], ctx.obj["profile"])
 
 
 @main.command(name="delete-empty-log-streams")

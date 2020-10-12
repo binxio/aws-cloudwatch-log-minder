@@ -22,7 +22,11 @@ to set the default retention period on log groups without one, type:
 cwlog-minder --dry-run set-log-retention --days 30
 ```
 This will show you which log groups will have its retention period set. Remove the `--dry-run` and
-it the retention period will be set.
+it the retention period will be set. If you wish to set the retention of all log groups to the same
+value, type:
+```sh
+cwlog-minder --dry-run set-log-retention --days 30 --overwrite
+```
 
 ## delete empty log streams
 To delete empty log streams older than the retention period, type:

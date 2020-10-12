@@ -9,6 +9,7 @@ cw_logs = None
 
 def set_log_retention(
     retention_in_days: int = 30,
+    overwrite: bool = False,
     dry_run: bool = False,
     region: str = None,
     profile: str = None,
@@ -22,13 +23,21 @@ def set_log_retention(
         for group in response["logGroups"]:
             log_group_name = group["logGroupName"]
             current_retention = group.get("retentionInDays")
-            if not current_retention or int(current_retention) != retention_in_days:
+            if not current_retention or (overwrite and int(current_retention) != retention_in_days):
                 try:
-                    log.info(
-                        "setting default retention period of log stream %s to %s",
-                        log_group_name,
-                        retention_in_days,
-                    )
+                    if current_retention:
+                        log.info(
+                            "overwriting current retention period of %s of log stream %s to %s",
+                            current_retention,
+                            log_group_name,
+                            retention_in_days,
+                        )
+                    else:
+                        log.info(
+                            "setting default retention period of log stream %s to %s",
+                            log_group_name,
+                            retention_in_days,
+                        )
                     if dry_run:
                         continue
                     cw_logs.put_retention_policy(
@@ -58,9 +67,13 @@ def handle(request, context):
     if "dry_run" in request and not isinstance(dry_run, bool):
         raise ValueError(f"'dry_run' is not a boolean value, {request}")
 
+    overwrite = request.get("overwrite", False)
+    if "overwrite" in request and not isinstance(overwrite, bool):
+        raise ValueError(f"'overwrite' is not a boolean value, {request}")
+
     default_log_retention = int(os.getenv("DEFAULT_LOG_RETENTION_IN_DAYS", "30"))
     days = request.get("days", default_log_retention)
     if "days" in request and not isinstance(days, int):
         raise ValueError(f"'days' is not a integer value, {request}")
 
-    set_log_retention(days, dry_run)
+    set_log_retention(days, overwrite, dry_run)
