@@ -66,20 +66,28 @@ def _delete_empty_log_streams(
                 return
 
             if not purge_non_empty:
-                response = cw_logs.get_log_events(
-                    logGroupName=log_group_name,
-                    logStreamName=log_stream_name,
-                    startFromHead=False,
-                    limit=2,
-                )
-                if response["events"]:
-                    log.warn(
-                        "keeping group %s, log stream %s, as it is non empty. Last event stored on %s",
-                        log_group_name,
-                        log_stream_name,
-                        last_event,
+                try:
+                    response = cw_logs.get_log_events(
+                        logGroupName=log_group_name,
+                        logStreamName=log_stream_name,
+                        startFromHead=False,
+                        limit=2,
                     )
-                    continue
+                    if response["events"]:
+                        log.warn(
+                            "keeping group %s, log stream %s, as it is non empty. Last event stored on %s",
+                            log_group_name,
+                            log_stream_name,
+                            last_event,
+                        )
+                        continue
+                except ClientError as e:
+                    if e.response['Error']['Code'] == 'ResourceNotFoundException':
+                        log.info(
+                            "empty log stream %s from group %s no longer present in cloudwatch",
+                            log_stream_name,
+                            log_group_name
+                        )
 
             log.info(
                 "deleting from group %s, log stream %s, with %s bytes last event stored on %s",
@@ -96,12 +104,19 @@ def _delete_empty_log_streams(
                     logGroupName=log_group_name, logStreamName=log_stream_name
                 )
             except ClientError as e:
-                log.error(
-                    "failed to delete log stream %s from group %s, %s",
-                    log_stream_name,
-                    log_group_name,
-                    e,
-                )
+                if e.response['Error']['Code'] == 'ResourceNotFoundException':
+                    log.info(
+                        "empty log stream %s from group %s already deleted",
+                        log_stream_name,
+                        log_group_name
+                    )
+                else:
+                    log.error(
+                        "failed to delete log stream %s from group %s, %s",
+                        log_stream_name,
+                        log_group_name,
+                        e,
+                    )
 
 
 def delete_empty_log_streams(
