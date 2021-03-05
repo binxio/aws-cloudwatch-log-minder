@@ -84,7 +84,7 @@ def _delete_empty_log_streams(
                 except ClientError as e:
                     if e.response['Error']['Code'] == 'ResourceNotFoundException':
                         log.info(
-                            "empty log stream %s from group %s no longer present in cloudwatch",
+                            "log stream %s from group %s no longer present in cloudwatch",
                             log_stream_name,
                             log_group_name
                         )
@@ -106,7 +106,7 @@ def _delete_empty_log_streams(
             except ClientError as e:
                 if e.response['Error']['Code'] == 'ResourceNotFoundException':
                     log.info(
-                        "empty log stream %s from group %s already deleted",
+                        "log stream %s from group %s already deleted",
                         log_stream_name,
                         log_group_name
                     )
