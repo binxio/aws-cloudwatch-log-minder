@@ -28,7 +28,8 @@ def _delete_empty_log_streams(
         return
 
     log.info(
-        "deleting streams from log group %s older than the retention period of %s days",
+        "%s deleting streams from log group %s older than the retention period of %s days",
+        ("dry run" if dry_run else ""),
         log_group_name,
         retention_in_days,
     )
@@ -90,7 +91,8 @@ def _delete_empty_log_streams(
                         )
 
             log.info(
-                "deleting from group %s, log stream %s, with %s bytes last event stored on %s",
+                "%s deleting from group %s, log stream %s, with %s bytes last event stored on %s",
+                ("dry run" if dry_run else ""),
                 log_group_name,
                 log_stream_name,
                 stream["storedBytes"],
