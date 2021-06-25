@@ -69,7 +69,7 @@ test: Pipfile.lock
 	[ -z "$(ls -1 tests/test*.py 2>/dev/null)" ] || PYTHONPATH=$(PWD)/src pipenv run pytest ./tests/test*.py
 
 fmt:
-	black $(find src -name *.py) tests/*.py
+	black $(shell find src -name \*.py) tests/*.py
 
 deploy: target/$(NAME)-$(VERSION).zip
 	aws s3 --region $(AWS_REGION) \
