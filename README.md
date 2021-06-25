@@ -36,6 +36,7 @@ cwlog-minder --dry-run delete-empty-log-streams
 This will show you which empty log streams will be deleted. Remove the `--dry-run` and
 these stream will be deleted.
 
+
 ## deploy the log minder
 To deploy the log minder as an AWS Lambda, type:
 
@@ -49,6 +50,15 @@ aws cloudformation deploy \
 	--parameter-overrides LogRetentionInDays=30
 ```
 This will install the log minder in your AWS account and run every hour.
+
+## delete empty log groups
+To delete empty log groups, type:
+```sh
+cwlog-minder --dry-run delete-empty-log-groups
+```
+This will show you which empty log groups will be deleted. Remove the `--dry-run` and
+these groups will be deleted. Do not use this command, if your log groups are
+managed by CloudFormation or Terraform.
 
 ## verbose
 
