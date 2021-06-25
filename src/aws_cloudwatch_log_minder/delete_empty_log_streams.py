@@ -28,7 +28,8 @@ def _delete_empty_log_streams(
         return
 
     log.info(
-        "deleting streams from log group %s older than the retention period of %s days",
+        "%s deleting streams from log group %s older than the retention period of %s days",
+        ("dry run" if dry_run else ""),
         log_group_name,
         retention_in_days,
     )
@@ -82,15 +83,16 @@ def _delete_empty_log_streams(
                         )
                         continue
                 except ClientError as e:
-                    if e.response['Error']['Code'] == 'ResourceNotFoundException':
+                    if e.response["Error"]["Code"] == "ResourceNotFoundException":
                         log.info(
                             "log stream %s from group %s no longer present in cloudwatch",
                             log_stream_name,
-                            log_group_name
+                            log_group_name,
                         )
 
             log.info(
-                "deleting from group %s, log stream %s, with %s bytes last event stored on %s",
+                "%s deleting from group %s, log stream %s, with %s bytes last event stored on %s",
+                ("dry run" if dry_run else ""),
                 log_group_name,
                 log_stream_name,
                 stream["storedBytes"],
@@ -104,11 +106,11 @@ def _delete_empty_log_streams(
                     logGroupName=log_group_name, logStreamName=log_stream_name
                 )
             except ClientError as e:
-                if e.response['Error']['Code'] == 'ResourceNotFoundException':
+                if e.response["Error"]["Code"] == "ResourceNotFoundException":
                     log.info(
                         "log stream %s from group %s already deleted",
                         log_stream_name,
-                        log_group_name
+                        log_group_name,
                     )
                 else:
                     log.error(
@@ -134,8 +136,8 @@ def delete_empty_log_streams(
     kwargs = {"PaginationConfig": {"PageSize": 50}}
     if log_group_name_prefix:
         kwargs["logGroupNamePrefix"] = log_group_name_prefix
+        log.info("finding log groups with prefix %r", log_group_name_prefix)
 
-    log.info("finding log groups with prefix %r", log_group_name_prefix)
     for response in cw_logs.get_paginator("describe_log_groups").paginate(**kwargs):
         for group in response["logGroups"]:
             _delete_empty_log_streams(group, purge_non_empty, dry_run)

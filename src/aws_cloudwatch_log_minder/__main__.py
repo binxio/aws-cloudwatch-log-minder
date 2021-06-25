@@ -2,6 +2,7 @@ import os
 import logging
 import click
 from .delete_empty_log_streams import delete_empty_log_streams
+from .delete_empty_log_groups import delete_empty_log_groups
 from .set_log_retention import set_log_retention
 
 
@@ -23,9 +24,24 @@ def main(ctx, dry_run, region, profile):
 @main.command(name="set-log-retention")
 @click.pass_context
 @click.option("--days", type=int, required=False, default=30, help="retention period")
-@click.option("--overwrite", is_flag=True, default=False, help="existing retention periods")
-def set_log_retention_command(ctx, days, overwrite):
-    set_log_retention(days, overwrite, ctx.obj["dry_run"], ctx.obj["region"], ctx.obj["profile"])
+@click.option(
+    "--overwrite", is_flag=True, default=False, help="existing retention periods"
+)
+@click.option(
+    "--log-group-name-prefix",
+    type=str,
+    required=False,
+    help="of selected log group only",
+)
+def set_log_retention_command(ctx, log_group_name_prefix, days, overwrite):
+    set_log_retention(
+        log_group_name_prefix,
+        days,
+        overwrite,
+        ctx.obj["dry_run"],
+        ctx.obj["region"],
+        ctx.obj["profile"],
+    )
 
 
 @main.command(name="delete-empty-log-streams")
@@ -46,6 +62,23 @@ def delete_empty_log_streams_command(ctx, log_group_name_prefix, purge_non_empty
     delete_empty_log_streams(
         log_group_name_prefix,
         purge_non_empty,
+        ctx.obj["dry_run"],
+        ctx.obj["region"],
+        ctx.obj["profile"],
+    )
+
+
+@main.command(name="delete-empty-log-groups")
+@click.pass_context
+@click.option(
+    "--log-group-name-prefix",
+    type=str,
+    required=False,
+    help="of selected log group only",
+)
+def delete_empty_log_groups_command(ctx, log_group_name_prefix):
+    delete_empty_log_groups(
+        log_group_name_prefix,
         ctx.obj["dry_run"],
         ctx.obj["region"],
         ctx.obj["profile"],
