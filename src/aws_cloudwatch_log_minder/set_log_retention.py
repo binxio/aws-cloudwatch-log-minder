@@ -29,7 +29,9 @@ def set_log_retention(
         for group in response["logGroups"]:
             log_group_name = group["logGroupName"]
             current_retention = group.get("retentionInDays")
-            if not current_retention or (overwrite and int(current_retention) != retention_in_days):
+            if not current_retention or (
+                overwrite and int(current_retention) != retention_in_days
+            ):
                 try:
                     if current_retention:
                         log.info(
@@ -84,4 +86,11 @@ def handle(request, context):
     if "days" in request and not isinstance(days, int):
         raise ValueError(f"'days' is not a integer value, {request}")
 
-    set_log_retention(days, overwrite, dry_run)
+    log_group_name_prefix = request.get("log_group_name_prefix")
+
+    set_log_retention(
+        log_group_name_prefix=log_group_name_prefix,
+        retention_in_days=days,
+        overwrite=overwrite,
+        dry_run=dry_run,
+    )

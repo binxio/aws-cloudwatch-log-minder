@@ -4,20 +4,14 @@ from typing import List
 
 import boto3
 from botocore.config import Config
-from botocore.exceptions import ClientError
 
 from .logger import log
 
 cw_logs = None
 
 
-def ms_to_datetime(ms: int) -> datetime:
-    return datetime(1970, 1, 1) + timedelta(milliseconds=ms)
-
-
 def delete_empty_log_groups(
     log_group_name_prefix: str = None,
-    purge_non_empty: bool = False,
     dry_run: bool = False,
     region: str = None,
     profile: str = None,
@@ -34,40 +28,22 @@ def delete_empty_log_groups(
 
     for response in cw_logs.get_paginator("describe_log_groups").paginate(**kwargs):
         for group in response["logGroups"]:
-            _delete_empty_log_groups(group, purge_non_empty, dry_run)
-
-def _delete_empty_log_groups(
-    group: dict, purge_non_empty: bool = False, dry_run: bool = False
-):
-    now = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    log_group_name = group["logGroupName"]
-    retention_in_days = group.get("retentionInDays", 0)
-    if not retention_in_days:
-        log.info(
-            "skipping log group %s as it has no retention period set",
-            log_group_name,
-        )
-        return
-
-    kwargs = {
-        "logGroupName": log_group_name,
-        "orderBy": "LastEventTime",
-        "descending": False,
-        "PaginationConfig": {"PageSize": 50},
-    }
-
-    for response in cw_logs.get_paginator("describe_log_streams").paginate(
-        **kwargs
-    ):
-        if len(response["logStreams"]) == 0:
-            log.info(
-                "%s deleting group %s", ("dry run" if dry_run else ""), log_group_name,
-            )
-            if dry_run:
-                continue
-
-            cw_logs.delete_log_group(logGroupName=log_group_name)
-
+            log_group_name = group["logGroupName"]
+            response = cw_logs.describe_log_streams(logGroupName=log_group_name)
+            if len(response["logStreams"]) == 0:
+                log.info(
+                    "%s deleting empty log group %s",
+                    ("dry run" if dry_run else ""),
+                    log_group_name,
+                )
+                if dry_run:
+                    continue
+            else:
+                log.info(
+                    "%s keeping log group %s as it is not empty",
+                    ("dry run" if dry_run else ""),
+                    log_group_name,
+                )
 
 
 def get_all_log_group_names() -> List[str]:
@@ -79,12 +55,10 @@ def get_all_log_group_names() -> List[str]:
     return result
 
 
-def fan_out(
-    function_arn: str, log_group_names: List[str], purge_non_empty: bool, dry_run: bool
-):
+def fan_out(function_arn: str, log_group_names: List[str], dry_run: bool):
     awslambda = boto3.client("lambda")
     log.info(
-        "recursively invoking %s to delete empty log streams from %d log groups",
+        "recursively invoking %s to delete empty groups from %d log groups",
         function_arn,
         len(log_group_names),
     )
@@ -92,7 +66,6 @@ def fan_out(
         payload = json.dumps(
             {
                 "log_group_name_prefix": log_group_name,
-                "purge_non_empty": purge_non_empty,
                 "dry_run": dry_run,
             }
         )
@@ -110,17 +83,12 @@ def handle(request, context):
     if "dry_run" in request and not isinstance(dry_run, bool):
         raise ValueError(f"'dry_run' is not a boolean value, {request}")
 
-    purge_non_empty = request.get("purge_non_empty", False)
-    if "purge_non_empty" in request and not isinstance(dry_run, bool):
-        raise ValueError(f"'purge_non_empty' is not a boolean value, {request}")
-
     log_group_name_prefix = request.get("log_group_name_prefix")
     if log_group_name_prefix:
-        delete_empty_log_groups(log_group_name_prefix, purge_non_empty, dry_run)
+        delete_empty_log_groups(log_group_name_prefix, dry_run)
     else:
         fan_out(
             context.invoked_function_arn,
             get_all_log_group_names(),
-            purge_non_empty,
             dry_run,
         )
