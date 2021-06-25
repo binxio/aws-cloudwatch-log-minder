@@ -7,7 +7,7 @@ Parameters:
     Default: ''
   CFNCustomProviderZipFileName:
     Type: String
-    Default: lambdas/aws-cloudwatch-log-minder-0.5.0.zip
+    Default: lambdas/aws-cloudwatch-log-minder-0.5.1.zip
   LogRetentionInDays:
     Description: 'to apply to log groups without retention'
     Type: Number
