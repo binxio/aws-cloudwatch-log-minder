@@ -136,8 +136,8 @@ def delete_empty_log_streams(
     kwargs = {"PaginationConfig": {"PageSize": 50}}
     if log_group_name_prefix:
         kwargs["logGroupNamePrefix"] = log_group_name_prefix
+        log.info("finding log groups with prefix %r", log_group_name_prefix)
 
-    log.info("finding log groups with prefix %r", log_group_name_prefix)
     for response in cw_logs.get_paginator("describe_log_groups").paginate(**kwargs):
         for group in response["logGroups"]:
             _delete_empty_log_streams(group, purge_non_empty, dry_run)
