@@ -38,8 +38,7 @@ def delete_empty_log_groups(
                 )
                 if dry_run:
                     continue
-                else:
-                    cw_logs.delete_log_group(logGroupName=log_group_name)
+                cw_logs.delete_log_group(logGroupName=log_group_name)
             else:
                 log.info(
                     "%s keeping log group %s as it is not empty",
