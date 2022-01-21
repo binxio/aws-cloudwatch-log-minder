@@ -63,7 +63,7 @@ managed by CloudFormation or Terraform.
 ## verbose
 
 ```sh
-export LOG_LEVEL=INFO
+export LOG_LEVEL=DEBUG
 cwlog-minder ...
 ```
 
