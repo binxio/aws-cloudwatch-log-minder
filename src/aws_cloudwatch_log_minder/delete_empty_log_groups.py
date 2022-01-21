@@ -31,7 +31,7 @@ def delete_empty_log_groups(
             log_group_name = group["logGroupName"]
             response = cw_logs.describe_log_streams(logGroupName=log_group_name)
             if len(response["logStreams"]) == 0:
-                log.info(
+                log.debug(
                     "%s deleting empty log group %s",
                     ("dry run" if dry_run else ""),
                     log_group_name,
@@ -40,7 +40,7 @@ def delete_empty_log_groups(
                     continue
                 cw_logs.delete_log_group(logGroupName=log_group_name)
             else:
-                log.info(
+                log.warn(
                     "%s keeping log group %s as it is not empty",
                     ("dry run" if dry_run else ""),
                     log_group_name,

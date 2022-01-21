@@ -27,7 +27,7 @@ def _delete_empty_log_streams(
         )
         return
 
-    log.info(
+    log.debug(
         "%s deleting streams from log group %s older than the retention period of %s days",
         ("dry run" if dry_run else ""),
         log_group_name,
@@ -51,7 +51,7 @@ def _delete_empty_log_streams(
                 last_event > (now - timedelta(days=retention_in_days))
                 and "lastEventTimestamp" not in stream
             ):
-                log.info(
+                log.debug(
                     "keeping group %s, empty log stream %s, created on %s",
                     log_group_name,
                     log_stream_name,
@@ -84,13 +84,13 @@ def _delete_empty_log_streams(
                         continue
                 except ClientError as e:
                     if e.response["Error"]["Code"] == "ResourceNotFoundException":
-                        log.info(
+                        log.warn(
                             "log stream %s from group %s no longer present in cloudwatch",
                             log_stream_name,
                             log_group_name,
                         )
 
-            log.info(
+            log.debug(
                 "%s deleting from group %s, log stream %s, with %s bytes last event stored on %s",
                 ("dry run" if dry_run else ""),
                 log_group_name,
@@ -107,7 +107,7 @@ def _delete_empty_log_streams(
                 )
             except ClientError as e:
                 if e.response["Error"]["Code"] == "ResourceNotFoundException":
-                    log.info(
+                    log.warn(
                         "log stream %s from group %s already deleted",
                         log_stream_name,
                         log_group_name,
