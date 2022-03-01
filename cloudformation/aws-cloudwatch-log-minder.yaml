@@ -13,14 +13,46 @@ Parameters:
     Type: Number
     Default: 30
     MinValue: 1
+  DeleteLogGroups:
+    Description: 'Set to true to activate log group deletion'
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
 
 Conditions:
   UsePublicBucket: !Equals
     - !Ref 'LambdaS3Bucket'
     - ''
+  CreateLogGroupDeletion: !Equals
+    - !Ref DeleteLogGroups
+    - true
 
 Resources:
-  Policy:
+  DeleteLogGroupPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Condition: CreateLogGroupDeletion
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+            - logs:DescribeLogGroups
+            - logs:DescribeLogStreams
+            - logs:PutRetentionPolicy
+            - logs:DeleteLogGroup
+            - logs:GetLogStream
+            - logs:GetLogEvents
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+          Resource:
+            - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:aws-cloudwatch-delete-empty-log-groups'
+
+  DeleteLogStreamPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
@@ -41,12 +73,13 @@ Resources:
           Resource:
             - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:aws-cloudwatch-delete-empty-log-streams'
 
-  LambdaRole:
+  DeleteLogGroupLambdaRole:
     Type: AWS::IAM::Role
+    Condition: CreateLogGroupDeletion
     Properties:
       ManagedPolicyArns:
       - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      - !Ref Policy
+      - !Ref DeleteLogGroupPolicy
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -55,6 +88,38 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
+
+  DeleteLogStreamLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - !Ref DeleteLogStreamPolicy
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+  DeleteEmptyLogGroups:
+    Type: AWS::Lambda::Function
+    Condition: CreateLogGroupDeletion
+    Properties:
+      Description: Delete empty log groups
+      FunctionName: aws-cloudwatch-delete-empty-log-groups
+      Code:
+        S3Bucket: !If
+          - UsePublicBucket
+          - !Sub 'binxio-public-${AWS::Region}'
+          - !Ref 'LambdaS3Bucket'
+        S3Key: !Ref 'CFNCustomProviderZipFileName'
+      Handler: aws_cloudwatch_log_minder.delete_empty_log_groups.handle
+      Role: !GetAtt DeleteLogGroupLambdaRole.Arn
+      Runtime: python3.7
+      Timeout: 900
 
   DeleteEmptyLogStreams:
     Type: AWS::Lambda::Function
@@ -68,7 +133,7 @@ Resources:
           - !Ref 'LambdaS3Bucket'
         S3Key: !Ref 'CFNCustomProviderZipFileName'
       Handler: aws_cloudwatch_log_minder.delete_empty_log_streams.handle
-      Role: !GetAtt LambdaRole.Arn
+      Role: !GetAtt DeleteLogStreamLambdaRole.Arn
       Runtime: python3.7
       Timeout: 900
 
@@ -84,12 +149,20 @@ Resources:
           - !Ref 'LambdaS3Bucket'
         S3Key: !Ref 'CFNCustomProviderZipFileName'
       Handler: aws_cloudwatch_log_minder.set_log_retention.handle
-      Role: !GetAtt LambdaRole.Arn
+      Role: !GetAtt DeleteLogStreamLambdaRole.Arn
       Runtime: python3.7
       Timeout: 900
       Environment:
         Variables:
           DEFAULT_LOG_RETENTION_IN_DAYS: !Ref 'LogRetentionInDays'
+
+  DeleteEmptyLogGroupsSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Condition: CreateLogGroupDeletion
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt DeleteEmptyLogGroups.Arn
+      Principal: events.amazonaws.com
 
   DeleteEmptyLogStreamsSchedulePermission:
     Type: AWS::Lambda::Permission
@@ -122,9 +195,23 @@ Resources:
     Properties:
       Name: aws-cloudwatch-delete-empty-log-streams
       Description: delete empty log streams
-      ScheduleExpression: 'cron(10 * * * ? *)'
+      ScheduleExpression: 'cron(15 * * * ? *)'
       State: ENABLED
       Targets:
         - Id: aws-cloudwatch-delete-empty-log-streams
           Arn: !GetAtt DeleteEmptyLogStreams.Arn
           Input: '{"dry_run": false}'
+
+  DeleteEmptyLogGroupsSchedule:
+    Type: AWS::Events::Rule
+    Condition: CreateLogGroupDeletion
+    Properties:
+      Name: aws-cloudwatch-delete-empty-log-groups
+      Description: delete empty log groups
+      ScheduleExpression: 'cron(30 * * * ? *)'
+      State: ENABLED
+      Targets:
+        - Id: aws-cloudwatch-delete-empty-log-groups
+          Arn: !GetAtt DeleteEmptyLogGroups.Arn
+          Input: '{"dry_run": false}'
+
