@@ -4,15 +4,14 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-boto3 = "*"
+twine = "*"
 pytest = "*"
 botostubs = "*"
-click = "*"
-twine = "*"
 
 [packages]
-aws-cloudwatch-log-minder = {editable = true,path = "."}
-urllib3 = ">=1.26.5"
+boto3 = "*"
+click = "*"
+
 
 [requires]
 python_version = "3.7"

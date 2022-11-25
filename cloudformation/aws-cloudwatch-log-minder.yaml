@@ -118,7 +118,7 @@ Resources:
         S3Key: !Ref 'CFNCustomProviderZipFileName'
       Handler: aws_cloudwatch_log_minder.delete_empty_log_groups.handle
       Role: !GetAtt DeleteLogGroupLambdaRole.Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
 
   DeleteEmptyLogStreams:
@@ -134,7 +134,7 @@ Resources:
         S3Key: !Ref 'CFNCustomProviderZipFileName'
       Handler: aws_cloudwatch_log_minder.delete_empty_log_streams.handle
       Role: !GetAtt DeleteLogStreamLambdaRole.Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
 
   SetLogRetention:
@@ -150,7 +150,7 @@ Resources:
         S3Key: !Ref 'CFNCustomProviderZipFileName'
       Handler: aws_cloudwatch_log_minder.set_log_retention.handle
       Role: !GetAtt DeleteLogStreamLambdaRole.Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
